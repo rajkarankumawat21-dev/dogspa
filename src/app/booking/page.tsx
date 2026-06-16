@@ -67,6 +67,11 @@ export default function BookingPage() {
     cardExpiry: "",
     cardCvc: "",
   });
+  const [currentMonthDate, setCurrentMonthDate] = useState(() => {
+    const d = new Date();
+    d.setDate(1);
+    return d;
+  });
   const [confirmed, setConfirmed] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -100,12 +105,44 @@ export default function BookingPage() {
     }, 1500);
   };
 
-  // Generate next 30 days
-  const dates = Array.from({ length: 30 }, (_, i) => {
-    const d = new Date();
-    d.setDate(d.getDate() + i);
-    return d;
-  }).filter((d) => d.getDay() !== 0); // exclude Sundays
+  // Calendar logic
+  const year = currentMonthDate.getFullYear();
+  const month = currentMonthDate.getMonth();
+  
+  const firstDayOfMonth = new Date(year, month, 1);
+  const lastDayOfMonth = new Date(year, month + 1, 0);
+  
+  const daysInMonth = lastDayOfMonth.getDate();
+  const startingDayOfWeek = firstDayOfMonth.getDay(); // 0 is Sunday
+  
+  const previousMonthLastDay = new Date(year, month, 0).getDate();
+  
+  const calendarDays = [];
+  
+  // Previous month padded days
+  for (let i = startingDayOfWeek - 1; i >= 0; i--) {
+    calendarDays.push({
+      date: new Date(year, month - 1, previousMonthLastDay - i),
+      isCurrentMonth: false,
+    });
+  }
+  
+  // Current month days
+  for (let i = 1; i <= daysInMonth; i++) {
+    calendarDays.push({
+      date: new Date(year, month, i),
+      isCurrentMonth: true,
+    });
+  }
+  
+  // Next month padded days to complete grid (42 cells max)
+  const remainingCells = 42 - calendarDays.length;
+  for (let i = 1; i <= remainingCells; i++) {
+    calendarDays.push({
+      date: new Date(year, month + 1, i),
+      isCurrentMonth: false,
+    });
+  }
 
   if (confirmed) {
     const refNum = `DS-${Date.now().toString(36).toUpperCase()}`;
@@ -321,49 +358,90 @@ export default function BookingPage() {
                     Choose Date &amp; Time
                   </h2>
 
-                  {/* Date Scroller */}
-                  <div className="mb-8">
-                    <h3 className="text-sm font-semibold text-navy mb-3 flex items-center gap-2">
-                      <Calendar className="w-4 h-4 text-gold" />
-                      Select a Date
-                    </h3>
-                    <div className="flex gap-3 overflow-x-auto pb-4 pt-1 px-1 -mx-1 snap-x no-scrollbar">
-                      {dates.map((d) => {
+                  {/* Calendar Grid */}
+                  <div className="mb-10">
+                    <div className="flex items-center justify-between mb-6">
+                      <h3 className="text-xl font-bold text-navy">
+                        {currentMonthDate.toLocaleString('default', { month: 'long', year: 'numeric' })}
+                      </h3>
+                      <div className="flex items-center gap-2 sm:gap-4">
+                        <button 
+                          onClick={() => {
+                            const d = new Date();
+                            d.setDate(1);
+                            setCurrentMonthDate(d);
+                          }}
+                          className="text-[11px] sm:text-xs font-bold text-gold hover:text-gold-dark tracking-wider"
+                        >
+                          TODAY
+                        </button>
+                        <div className="flex gap-1 sm:gap-2">
+                          <button 
+                            onClick={() => setCurrentMonthDate(new Date(year, month - 1, 1))}
+                            className="p-1 text-charcoal/80 hover:text-gold transition-colors"
+                          >
+                            <ChevronLeft className="w-5 h-5" />
+                          </button>
+                          <button 
+                            onClick={() => setCurrentMonthDate(new Date(year, month + 1, 1))}
+                            className="p-1 text-charcoal/80 hover:text-gold transition-colors"
+                          >
+                            <ChevronRight className="w-5 h-5" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-7 gap-y-4 text-center">
+                      {/* Day Headers */}
+                      {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, i) => (
+                        <div key={i} className="text-sm font-semibold text-charcoal/60 pb-2">
+                          {day}
+                        </div>
+                      ))}
+
+                      {/* Date Cells */}
+                      {calendarDays.map((dayObj, i) => {
+                        const d = dayObj.date;
                         // Safe timezone formatting
                         const offset = d.getTimezoneOffset() * 60000;
-                        const localISOTime = new Date(d.getTime() - offset).toISOString().split("T")[0];
-                        const dateStr = localISOTime;
+                        const dateStr = new Date(d.getTime() - offset).toISOString().split("T")[0];
                         
                         const isSelected = booking.date === dateStr;
+                        const isSunday = d.getDay() === 0;
                         
                         const today = new Date();
-                        const tomorrow = new Date();
-                        tomorrow.setDate(today.getDate() + 1);
-                        
-                        let dayLabel = d.toLocaleDateString("en-GB", { weekday: "short" });
-                        if (d.toDateString() === today.toDateString()) dayLabel = "Today";
-                        else if (d.toDateString() === tomorrow.toDateString()) dayLabel = "Tmrw";
+                        today.setHours(0,0,0,0);
+                        const isPast = d < today;
+                        const isDisabled = isPast || isSunday;
+
+                        let textClass = "text-charcoal font-medium";
+                        if (!dayObj.isCurrentMonth) textClass = "text-charcoal/30";
+                        if (isDisabled) textClass = "text-charcoal/30 cursor-not-allowed";
+                        if (isSelected) textClass = "text-gold font-bold";
 
                         return (
-                          <button
-                            key={dateStr}
-                            onClick={() => setBooking({ ...booking, date: dateStr })}
-                            className={`flex-shrink-0 snap-start w-[72px] h-[88px] rounded-2xl flex flex-col items-center justify-center transition-all duration-300 shadow-sm border ${
-                              isSelected
-                                ? "bg-gold border-gold text-white shadow-md transform -translate-y-1"
-                                : "bg-white border-gold/10 hover:border-gold/40 text-charcoal"
-                            }`}
-                          >
-                            <span className={`text-[11px] font-semibold uppercase tracking-wider mb-1 ${isSelected ? "text-white/90" : "text-charcoal/60"}`}>
-                              {dayLabel}
-                            </span>
-                            <span className="text-2xl font-bold leading-none mb-1">
+                          <div key={i} className="flex justify-center items-center h-12">
+                            <button
+                              disabled={isDisabled}
+                              onClick={() => setBooking({ ...booking, date: dateStr })}
+                              className={`relative w-10 h-10 rounded-xl flex items-center justify-center transition-all ${
+                                isSelected 
+                                  ? "border-2 border-gold text-gold" 
+                                  : isDisabled
+                                    ? ""
+                                    : "hover:bg-cream hover:text-gold"
+                              } ${textClass}`}
+                            >
                               {d.getDate()}
-                            </span>
-                            <span className={`text-[10px] uppercase font-medium ${isSelected ? "text-white/80" : "text-charcoal/40"}`}>
-                              {d.toLocaleDateString("en-GB", { month: "short" })}
-                            </span>
-                          </button>
+                              {/* Display Month Abbr for first days of padded months like the screenshot */}
+                              {!dayObj.isCurrentMonth && d.getDate() === 1 && (
+                                <span className="absolute -top-4 text-[9px] text-charcoal/40 font-medium">
+                                  {d.toLocaleString('default', { month: 'short' })}
+                                </span>
+                              )}
+                            </button>
+                          </div>
                         );
                       })}
                     </div>
