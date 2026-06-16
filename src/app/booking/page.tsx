@@ -361,7 +361,7 @@ export default function BookingPage() {
                   {/* Calendar Grid */}
                   <div className="mb-10">
                     <div className="flex items-center justify-between mb-6">
-                      <h3 className="text-xl font-bold text-navy">
+                      <h3 className="text-xl font-bold text-navy dark:text-white">
                         {currentMonthDate.toLocaleString('default', { month: 'long', year: 'numeric' })}
                       </h3>
                       <div className="flex items-center gap-2 sm:gap-4">
@@ -378,13 +378,13 @@ export default function BookingPage() {
                         <div className="flex gap-1 sm:gap-2">
                           <button 
                             onClick={() => setCurrentMonthDate(new Date(year, month - 1, 1))}
-                            className="p-1 text-charcoal/80 hover:text-gold transition-colors"
+                            className="p-1 text-charcoal/80 dark:text-gray-300 hover:text-gold dark:hover:text-gold transition-colors"
                           >
                             <ChevronLeft className="w-5 h-5" />
                           </button>
                           <button 
                             onClick={() => setCurrentMonthDate(new Date(year, month + 1, 1))}
-                            className="p-1 text-charcoal/80 hover:text-gold transition-colors"
+                            className="p-1 text-charcoal/80 dark:text-gray-300 hover:text-gold dark:hover:text-gold transition-colors"
                           >
                             <ChevronRight className="w-5 h-5" />
                           </button>
@@ -395,7 +395,7 @@ export default function BookingPage() {
                     <div className="grid grid-cols-7 gap-y-4 text-center">
                       {/* Day Headers */}
                       {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, i) => (
-                        <div key={i} className="text-sm font-semibold text-charcoal/60 pb-2">
+                        <div key={i} className="text-sm font-semibold text-charcoal/60 dark:text-gray-400 pb-2">
                           {day}
                         </div>
                       ))}
@@ -415,9 +415,9 @@ export default function BookingPage() {
                         const isPast = d < today;
                         const isDisabled = isPast || isSunday;
 
-                        let textClass = "text-charcoal font-medium";
-                        if (!dayObj.isCurrentMonth) textClass = "text-charcoal/30";
-                        if (isDisabled) textClass = "text-charcoal/30 cursor-not-allowed";
+                        let textClass = "text-charcoal dark:text-gray-200 font-medium";
+                        if (!dayObj.isCurrentMonth) textClass = "text-charcoal/30 dark:text-gray-600";
+                        if (isDisabled) textClass = "text-charcoal/30 dark:text-gray-600 cursor-not-allowed";
                         if (isSelected) textClass = "text-gold font-bold";
 
                         return (
@@ -425,21 +425,21 @@ export default function BookingPage() {
                             <button
                               disabled={isDisabled}
                               onClick={() => setBooking({ ...booking, date: dateStr })}
-                              className={`relative w-10 h-10 rounded-xl flex items-center justify-center transition-all ${
+                              className={`w-10 h-10 rounded-xl flex flex-col items-center justify-center transition-all ${
                                 isSelected 
                                   ? "border-2 border-gold text-gold" 
                                   : isDisabled
                                     ? ""
-                                    : "hover:bg-cream hover:text-gold"
+                                    : "hover:bg-cream dark:hover:bg-charcoal hover:text-gold dark:hover:text-gold"
                               } ${textClass}`}
                             >
-                              {d.getDate()}
                               {/* Display Month Abbr for first days of padded months like the screenshot */}
                               {!dayObj.isCurrentMonth && d.getDate() === 1 && (
-                                <span className="absolute -top-4 text-[9px] text-charcoal/40 font-medium">
+                                <span className="text-[9px] text-charcoal/40 dark:text-gray-500 font-medium leading-[0.5] mb-0.5">
                                   {d.toLocaleString('default', { month: 'short' })}
                                 </span>
                               )}
+                              <span>{d.getDate()}</span>
                             </button>
                           </div>
                         );
