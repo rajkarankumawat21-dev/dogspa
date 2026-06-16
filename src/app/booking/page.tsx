@@ -10,6 +10,9 @@ import {
   ChevronLeft,
   Check,
   Sparkles,
+  Sunrise,
+  Sun,
+  Sunset,
 } from "lucide-react";
 import { services, servicePackages } from "@/data/services";
 
@@ -23,22 +26,22 @@ const steps = [
   { num: 5, label: "Confirm" },
 ];
 
-const timeSlots = [
-  "09:00",
-  "09:30",
-  "10:00",
-  "10:30",
-  "11:00",
-  "11:30",
-  "12:00",
-  "13:00",
-  "13:30",
-  "14:00",
-  "14:30",
-  "15:00",
-  "15:30",
-  "16:00",
-  "16:30",
+const timeCategories = [
+  {
+    label: "Morning",
+    icon: Sunrise,
+    slots: ["09:00", "09:30", "10:00", "10:30", "11:00", "11:30"],
+  },
+  {
+    label: "Afternoon",
+    icon: Sun,
+    slots: ["12:00", "13:00", "13:30", "14:00", "14:30"],
+  },
+  {
+    label: "Evening",
+    icon: Sunset,
+    slots: ["15:00", "15:30", "16:00", "16:30"],
+  },
 ];
 
 export default function BookingPage() {
@@ -100,7 +103,7 @@ export default function BookingPage() {
   // Generate next 30 days
   const dates = Array.from({ length: 30 }, (_, i) => {
     const d = new Date();
-    d.setDate(d.getDate() + i + 1);
+    d.setDate(d.getDate() + i);
     return d;
   }).filter((d) => d.getDay() !== 0); // exclude Sundays
 
@@ -318,34 +321,48 @@ export default function BookingPage() {
                     Choose Date &amp; Time
                   </h2>
 
-                  {/* Date Grid */}
-                  <div className="mb-6">
+                  {/* Date Scroller */}
+                  <div className="mb-8">
                     <h3 className="text-sm font-semibold text-navy mb-3 flex items-center gap-2">
                       <Calendar className="w-4 h-4 text-gold" />
                       Select a Date
                     </h3>
-                    <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-7 gap-2 max-h-48 overflow-y-auto pr-1">
+                    <div className="flex gap-3 overflow-x-auto pb-4 pt-1 px-1 -mx-1 snap-x no-scrollbar">
                       {dates.map((d) => {
-                        const dateStr = d.toISOString().split("T")[0];
+                        // Safe timezone formatting
+                        const offset = d.getTimezoneOffset() * 60000;
+                        const localISOTime = new Date(d.getTime() - offset).toISOString().split("T")[0];
+                        const dateStr = localISOTime;
+                        
+                        const isSelected = booking.date === dateStr;
+                        
+                        const today = new Date();
+                        const tomorrow = new Date();
+                        tomorrow.setDate(today.getDate() + 1);
+                        
+                        let dayLabel = d.toLocaleDateString("en-GB", { weekday: "short" });
+                        if (d.toDateString() === today.toDateString()) dayLabel = "Today";
+                        else if (d.toDateString() === tomorrow.toDateString()) dayLabel = "Tmrw";
+
                         return (
                           <button
                             key={dateStr}
-                            onClick={() =>
-                              setBooking({ ...booking, date: dateStr })
-                            }
-                            className={`p-2 rounded-xl text-center transition-all text-sm ${booking.date === dateStr
-                                ? "bg-gold text-white"
-                                : "bg-cream hover:bg-gold/10 text-charcoal"
-                              }`}
+                            onClick={() => setBooking({ ...booking, date: dateStr })}
+                            className={`flex-shrink-0 snap-start w-[72px] h-[88px] rounded-2xl flex flex-col items-center justify-center transition-all duration-300 shadow-sm border ${
+                              isSelected
+                                ? "bg-gold border-gold text-white shadow-md transform -translate-y-1"
+                                : "bg-white border-gold/10 hover:border-gold/40 text-charcoal"
+                            }`}
                           >
-                            <div className="font-bold">
+                            <span className={`text-[11px] font-semibold uppercase tracking-wider mb-1 ${isSelected ? "text-white/90" : "text-charcoal/60"}`}>
+                              {dayLabel}
+                            </span>
+                            <span className="text-2xl font-bold leading-none mb-1">
                               {d.getDate()}
-                            </div>
-                            <div className="text-xs opacity-70">
-                              {d.toLocaleDateString("en-GB", {
-                                weekday: "short",
-                              })}
-                            </div>
+                            </span>
+                            <span className={`text-[10px] uppercase font-medium ${isSelected ? "text-white/80" : "text-charcoal/40"}`}>
+                              {d.toLocaleDateString("en-GB", { month: "short" })}
+                            </span>
                           </button>
                         );
                       })}
@@ -353,27 +370,41 @@ export default function BookingPage() {
                   </div>
 
                   {/* Time Slots */}
-                  <div>
-                    <h3 className="text-sm font-semibold text-navy mb-3 flex items-center gap-2">
+                  <div className="space-y-6">
+                    <h3 className="text-sm font-semibold text-navy flex items-center gap-2 border-b border-gold/10 pb-2">
                       <Clock className="w-4 h-4 text-gold" />
                       Select a Time
                     </h3>
-                    <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
-                      {timeSlots.map((time) => (
-                        <button
-                          key={time}
-                          onClick={() =>
-                            setBooking({ ...booking, time })
-                          }
-                          className={`py-2.5 rounded-xl text-sm font-medium transition-all ${booking.time === time
-                              ? "bg-gold text-white"
-                              : "bg-cream hover:bg-gold/10 text-charcoal"
-                            }`}
-                        >
-                          {time}
-                        </button>
-                      ))}
-                    </div>
+                    
+                    {timeCategories.map((category) => {
+                      const Icon = category.icon;
+                      return (
+                        <div key={category.label} className="space-y-3">
+                          <div className="flex items-center gap-2 text-sm font-medium text-charcoal/70">
+                            <Icon className="w-4 h-4" />
+                            {category.label}
+                          </div>
+                          <div className="flex flex-wrap gap-2 sm:gap-3">
+                            {category.slots.map((time) => {
+                              const isSelected = booking.time === time;
+                              return (
+                                <button
+                                  key={time}
+                                  onClick={() => setBooking({ ...booking, time })}
+                                  className={`px-5 py-2.5 rounded-full text-sm font-medium transition-all duration-300 border ${
+                                    isSelected
+                                      ? "bg-navy border-navy text-white shadow-md transform -translate-y-0.5"
+                                      : "bg-white border-gray-200 hover:border-gold hover:text-gold text-charcoal"
+                                  }`}
+                                >
+                                  {time}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </motion.div>
               )}
