@@ -119,7 +119,6 @@ export function HeroSection() {
           {[
             { icon: "🌟", label: "5-Star Rated" },
             { icon: "💝", label: "One-to-One Care" },
-            { icon: "🌿", label: "Hypoallergenic Products" },
             { icon: "🧘‍♀️", label: "Stress-Free Environment" },
           ].map((badge) => (
             <div
