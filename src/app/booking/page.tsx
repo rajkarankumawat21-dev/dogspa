@@ -4,7 +4,6 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import {
-  Calendar,
   Clock,
   ChevronRight,
   ChevronLeft,
@@ -74,6 +73,7 @@ export default function BookingPage() {
   });
   const [confirmed, setConfirmed] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [refNum, setRefNum] = useState("");
 
   const selectService = (id: string, name: string, price: number) => {
     setBooking({ ...booking, serviceId: id, serviceName: name, servicePrice: price });
@@ -97,12 +97,26 @@ export default function BookingPage() {
     }
   };
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
     setIsProcessing(true);
-    setTimeout(() => {
+    try {
+      const res = await fetch("/api/bookings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(booking),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setRefNum(`DS-${data.booking.id.substring(0, 6).toUpperCase()}`);
+        setConfirmed(true);
+      } else {
+        console.error("Booking failed");
+      }
+    } catch (error) {
+      console.error("Error submitting booking", error);
+    } finally {
       setIsProcessing(false);
-      setConfirmed(true);
-    }, 1500);
+    }
   };
 
   // Calendar logic
@@ -145,7 +159,6 @@ export default function BookingPage() {
   }
 
   if (confirmed) {
-    const refNum = `DS-${Date.now().toString(36).toUpperCase()}`;
     return (
       <section className="min-h-screen flex items-center justify-center bg-cream px-4 pt-24">
         <motion.div

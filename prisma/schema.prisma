@@ -1,13 +1,105 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
-  provider = "prisma-client"
-  output   = "../src/generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "sqlite"
+  url      = "file:../dev.db"
+}
+
+model Admin {
+  id       String @id @default(uuid())
+  username String @unique
+  password String // hashed or plain for mock
+}
+
+model Client {
+  id        String    @id @default(uuid())
+  name      String
+  email     String    @unique
+  phone     String
+  notes     String?   // Admin notes
+  pets      Pet[]
+  bookings  Booking[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Pet {
+  id        String    @id @default(uuid())
+  name      String
+  size      String    // Tiny, Small, Medium
+  notes     String?   // Pet quirks
+  clientId  String
+  client    Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  bookings  Booking[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Booking {
+  id            String   @id @default(uuid())
+  clientId      String?
+  client        Client?  @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  petId         String?
+  pet           Pet?     @relation(fields: [petId], references: [id], onDelete: SetNull)
+  
+  // Snapshot data (what was entered at time of booking)
+  clientName    String
+  email         String
+  phone         String
+  petName       String
+  petSize       String   // Tiny, Small, Medium
+  serviceType   String   // Bath, Mini, Full, Puppy
+  date          String   // YYYY-MM-DD format
+  time          String   // HH:MM format
+  status        String   @default("PENDING") // PENDING, ACCEPTED, REJECTED
+  paymentStatus String   @default("UNPAID")  // UNPAID, DEPOSIT_PAID, FULL_PAID
+  totalAmount   Float
+  depositPaid   Float    @default(0)
+  promoCodeUsed String?  // Track which promo code was applied
+  isRead        Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Campaign {
+  id                 String   @id @default(uuid())
+  title              String
+  description        String
+  promoCode          String?
+  imageUrl           String?
+  discountPercentage Float    @default(5.0)
+  isActive           Boolean  @default(false)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+}
+
+model GalleryImage {
+  id        String   @id @default(uuid())
+  url       String
+  caption   String?
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model SiteContent {
+  id        String   @id @default(uuid())
+  section   String   @unique // e.g., 'hero', 'story', 'faq', 'testimonials'
+  data      String   // JSON string containing the section's content
+  updatedAt DateTime @updatedAt
+}
+
+model ContentRevision {
+  id          String    @id @default(uuid())
+  section     String    // e.g., 'hero', 'settings'
+  data        String    // Snapshot of the JSON data
+  description String?   // User-provided description of the change
+  isDeleted   Boolean   @default(false)
+  deletedAt   DateTime?
+  createdAt   DateTime  @default(now())
 }

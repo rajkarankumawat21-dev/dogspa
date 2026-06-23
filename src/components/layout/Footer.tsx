@@ -19,10 +19,10 @@ const serviceLinks = [
 ];
 
 const seoLinks = [
-  { href: "/dog-grooming-harrow", label: "Dog Grooming Harrow" },
-  { href: "/dog-spa-harrow", label: "Dog Spa Harrow" },
-  { href: "/cat-grooming-harrow", label: "Cat Grooming Harrow" },
-  { href: "/pet-grooming-harrow", label: "Pet Grooming Harrow" },
+  { href: "/locations/dog-grooming-harrow", label: "Dog Grooming Harrow" },
+  { href: "/locations/dog-spa-harrow", label: "Dog Spa Harrow" },
+  { href: "/locations/cat-grooming-harrow", label: "Cat Grooming Harrow" },
+  { href: "/locations/pet-grooming-harrow", label: "Pet Grooming Harrow" },
 ];
 
 export function Footer() {
